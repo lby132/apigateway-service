@@ -20,14 +20,38 @@ spring:
             preLogger: true
             postLogger: true
       routes:
-        - id: catalog-service
-          uri: lb://CATALOG-SERVICE
+#        - id: user-service
+#          uri: lb://USER-SERVICE
+#          predicates:
+#            - Path=/user-service/**
+        - id: user-service
+          uri: lb://USER-SERVICE
           predicates:
-            - Path=/catalog-service/**
+            - Path=/user-service/login
+            - Method=POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/user-service/users
+            - Method=POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
         - id: user-service
           uri: lb://USER-SERVICE
           predicates:
             - Path=/user-service/**
+            - Method=GET
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
+        - id: catalog-service
+          uri: lb://CATALOG-SERVICE
+          predicates:
+            - Path=/catalog-service/**
         - id: first-service
           uri: lb://MY-FIRST-SERVICE
           predicates:
@@ -51,7 +75,7 @@ spring:
                 postLogger: true
 
 
-     #id??? ???? uri? predicates? path? first-service? ?? ???? uri? ????.
-     #?: http://127.0.0.1:8081/first-service/welcome ? uri??? ???? first-service? ????.
-     #Path=/first-service/** ?? **? ?? ? ???? ???? gateway??? ?? ??? ?????? ??? RequsetMapping?? ????.
-     #????? first-service? ?????? ?????? RequestMapping? ??? first-service? ????
+      #id값으로 구분하고 uri와 predicates의 path와 first-service에 있는 컨트롤러 uri와 합쳐진다.
+      #예: http://127.0.0.1:8081/first-service/welcome 이 uri요청이 들어오면 first-service가 실행된다.
+      #Path=/first-service/** 에서 **은 뭐든 다 받겠다는 뜻이라서 gateway가아닌 다른 서비스 컨트롤러에서 지정한 RequsetMapping으로 매핑된다.
+      #주의사항은 first-service에 컨트롤러에서 클래스레벨의 RequestMapping의 경로를 first-service로 해야한다
