@@ -11,6 +11,14 @@ eureka:
 spring:
   application:
     name: apigateway-service
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: guest
+    password: guest
+#  config:
+#    import:
+#      - classpath:/bootstrap.yml
   cloud:
     gateway:
       default-filters:
@@ -49,6 +57,14 @@ spring:
             - RemoveRequestHeader=Cookie
             - RewritePath=/user-service/(?<segment>.*), /$\{segment}
             - AuthorizationHeaderFilter
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/user-service/actuator/**
+            - Method=GET,POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
         - id: catalog-service
           uri: lb://CATALOG-SERVICE
           predicates:
@@ -81,5 +97,13 @@ spring:
       #Path=/first-service/** 에서 **은 뭐든 다 받겠다는 뜻이라서 gateway가아닌 다른 서비스 컨트롤러에서 지정한 RequsetMapping으로 매핑된다.
       #주의사항은 first-service에 컨트롤러에서 클래스레벨의 RequestMapping의 경로를 first-service로 해야한다
 
+
+
 token:
   secret: user_token
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: refresh, health, beans, httptrace, busrefresh
